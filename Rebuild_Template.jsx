@@ -61,6 +61,9 @@ Progress:
 function container()
 {
 
+	var valid = true;
+	#include "/Volumes/Customization/Library/Scripts/Script Resources/Data/Utilities_Container.js";
+
 	/*****************************************************************************/
 
 	///////Begin/////////
@@ -309,42 +312,71 @@ function container()
 	var prepress = layers[0].layers["Prepress"];
 	var garLayName = layers[0].name;
 	var artLayers = layers[0].layers["Artwork Layer"];
+	var code,underscoreCode;
 
-	// var styleNum = layers[0].name.substring(layers[0].name.lastIndexOf("_")+1,layers[0].name.length);
+	//////////////////
+	//Legacy Version//
+	////Do Not Use////
+	//////////////////
 
-	// var code = layers[0].name.substring(0,layers[0].name.indexOf("_0"));
+		//the below is deprecated in favor of using centralized getCode function
+		//located in utilities container.
 
-	var pat1 = /_[a-zA-Z]{1,2}$/
-	var pat2 = /_\d{3,4}$/
-	
 
-	if(pat1.test(garLayName))
+		// var styleNum = layers[0].name.substring(layers[0].name.lastIndexOf("_")+1,layers[0].name.length);
+
+		// var code = layers[0].name.substring(0,layers[0].name.indexOf("_0"));
+
+		// var pat1 = /_[a-zA-Z]{1,2}$/
+		// var pat2 = /_\d{3,4}$/
+		
+
+		// if(pat1.test(garLayName))
+		// {
+		// 	//this garment layer name has a trailing letter, likely to distinguish between inside and outside of a reversible jersey
+		// 	//to get the correct code, you need to trim the trailing letter and then the style number
+
+		// 	//trim off the trailing _A or similar so the string contains the code and style number
+		// 	var code = garLayName.substring(0, garLayName.lastIndexOf("_"))
+
+		// 	//trim off the style number so you're left with the correct code.
+		// 	code = garLayName.substring(0, code.lastIndexOf("_"))
+		// }
+
+		// else if(pat2.test(garLayName))
+		// {
+		// 	//this garment layer name ends with the style number
+		// 	//to get the correct code you need to simply trim the _000 from the end.
+		// 	var code = garLayName.substring(0, garLayName.lastIndexOf("_"))
+		// }
+
+	if(valid)
 	{
-		//this garment layer name has a trailing letter, likely to distinguish between inside and outside of a reversible jersey
-		//to get the correct code, you need to trim the trailing letter and then the style number
-
-		//trim off the trailing _A or similar so the string contains the code and style number
-		var code = garLayName.substring(0, garLayName.lastIndexOf("_"))
-
-		//trim off the style number so you're left with the correct code.
-		code = garLayName.substring(0, code.lastIndexOf("_"))
+		code = getCode(garLayName);
 	}
-
-	else if(pat2.test(garLayName))
+	else
 	{
-		//this garment layer name ends with the style number
-		//to get the correct code you need to simply trim the _000 from the end.
-		var code = garLayName.substring(0, garLayName.lastIndexOf("_"))
-	}
-
-
-	if(!templateInfo[code])
-	{
-		alert("That code wasn't found in the library.\nPlease let William know about this issue.\nSend the correct bm code and old garment code if possible, eg. FD_FAST_2B");
 		return false;
 	}
 
-	var library = templateInfo[code]["placement"];
+	underscoreCode = code.replace("-","_");
+
+	if(templateInfo[code])
+	{
+		var library = templateInfo[code]["placement"];
+	}
+	else if(templateInfo[underscoreCode])
+	{
+		code = underscoreCode;
+		var library = templateInfo[code]["placement"];
+	}
+	else
+	{
+		alert("The code: " + code + " wasn't found in the library.\nPlease let William know about this issue.");
+		return false;
+	}
+
+	
 
 	
 	if(library["Regular"] != undefined)
@@ -450,7 +482,6 @@ function container()
 				{
 					thisItem.rotate(180);
 				}
-				$.writeln("moving " + thisName + " to [" + coords[thisName][0] + "," + coords[thisName][1] + "]");
 				
 				thisItem.left = coords[thisName][0];
 				thisItem.top = coords[thisName][1];
@@ -467,12 +498,14 @@ function container()
 		layers[0].layers["Information"].locked = false;
 		var comp = layers[0].layers["Information"].layers["Prepress Completed"];
 		comp.remove();
-		layers[0].layers["Information"].locked = true;
+		// layers[0].layers["Information"].locked = true;
 	}
 	catch(e)
 	{
 		//no prepress completed indicator detected or else it couldn't be deleted for some reason..
 	}
+
+	layers[0].layers["Information"].locked = true;l
 
 	// var styleNum = prompt("Enter style Number..");
 
