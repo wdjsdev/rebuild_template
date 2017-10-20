@@ -1,62 +1,3 @@
-/*
-
-
-
-Script Name: Adjust Template
-Author: William Dowling
-Build Date: 22 September, 2016
-Description: Reposition all prepress pieces. use library object for one off prepress fixes/adjustments
-Build number: 1.0
-
-Progress:
-
-	Version 1.001
-		21 September, 2016
-		initial build.
-			very simple, just update the library object with new coordinates
-			choose whether to execute once or to loop all documents
-
-	Version 1.002
-		21 October, 2016
-		removed library object and replaced with included central library for more universal operation.
-
-	Version 1.003
-		28 October, 2016
-		Added prompt to determine whether to batch all open documents or just do the current one.
-
-	Version 1.004
-		16 January, 2017
-		Adding a prompt dialog to allow the user to determine the correct left to right order of the pieces
-		Added condition to accommodate regular/raglan distinctions for slowpitch uniforms.
-
-	Version 1.006
-		01 January, 2017
-		Add a dialog that asks user whether the pieces need to be named or whether the pieces are already named properly.
-			if pieces are properly named, skip the sort function and simply put the pieces back where they belong.
-		Altering the line of code that determines the code of the garment to make it more robust
-
-	Version 1.007
-		27 February, 2017
-		Added a condition to flip the outside cowl pieces for football jerseys.
-
-	Version 1.008
-		27 February, 2017
-		Adding logic to remove artwork from artwork layers so the template will be nice and clean for use later.
-
-	Version 1.009
-		28 February, 2017
-		Fixed logic that removes artwork. had some bad variable definitions in there that was causing silent errors.
-
-	Version 1.010
-		02 March, 2017
-		Added a check to make sure the garment exists in the build_template_library.
-		Alert the user and exit script if not.
-
-	Version 1.011
-		27 March, 2017
-		Fixed an issue that caused garment code to be improperly calculated
-		if the garment code had an _A appended to the layer name.
-*/
 
 function container()
 {
@@ -267,6 +208,136 @@ function container()
 		return result;
 	}
 
+	function getData(code)
+	{
+		var result = true;
+
+		if(templateInfo[code])
+		{
+			placementData = templateInfo[code]["placement"];
+			libPieces = templateInfo[code]["pieces"];
+		}
+		else if(templateInfo[underscoreCode])
+		{
+			code = underscoreCode;
+			placementData = templateInfo[code]["placement"];
+			libPieces = templateInfo[code]["pieces"];
+		}
+		else
+		{
+			alert("The code: " + code + " wasn't found in the library.\nPlease let William know about this issue.");
+			result = false;
+		}
+
+		if(placementData["Regular"] || placementData["Raglan"])
+		{
+			var regRag = regRagPrompt(placementData);
+			if(regRag)
+			{
+				placementData = placementData[regRag];                                                                          
+			}
+			else
+			{
+				alert("You cancelled the script. Exiting.");
+				result = false;
+			}
+			
+		}
+
+		return result;
+	}
+
+	function renamePiecesDialog()
+	{
+		var result = true;
+		var w = new Window("dialog", "Did the group names get messed up?");
+			var txtGroup = w.add("group");
+				var txt = txtGroup.add("statictext", undefined, "Do the pieces need to be properly renamed?");
+			var btnGroup = w.add("group");
+				var yesButton = btnGroup.add("button", undefined, "Yes");
+				yesButton.onClick = function()
+				{
+					renamePieces = true;
+					w.close();
+				}
+
+				var noButton = btnGroup.add("button", undefined, "No");
+				noButton.onClick = function()
+				{
+					renamePieces = false;
+					w.close();
+				}
+
+				var cancel = btnGroup.add("button", undefined, "Cancel");
+				cancel.onClick = function()
+				{
+					result = false;
+					w.close();
+				}
+		w.show();
+
+		return result;
+	}
+
+	function moveArt()
+	{
+		var result = true;
+
+		var len = ppLay.layers.length;
+		var curLay,curSize,subLen,piece,groups = [];
+		for(var x=0;x<len;x++)
+		{
+			curLay = ppLay.layers[x];
+			curSize = curLay.name;
+			groups = curLay.groupItems;
+			subLen = groups.length;
+
+			for(var y=0;y<subLen;y++)
+			{
+				piece = groups[y];
+				piece.left = placementData[curSize][piece.name][0];
+				piece.top = placementData[curSize][piece.name][1];
+			}
+		}
+		return result;
+	}
+
+	function rename()
+	{
+		var result = true;
+
+		var pieces = [];
+		pieces = leftToRightOrderPrompt(code,libPieces);
+		if(pieces)
+		{
+			var curLay,curSize,subLen,piece,groups = [];
+			var len = ppLay.layers.length;
+			for(var x=0;x<len;x++)
+			{
+				curLay = ppLay.layers[x];
+				curSize = curLay.name;
+				groups = [];
+				subLen = curLay.groupItems.length;
+				for(var y=0;y<subLen;y++)
+				{
+					groups.push(curLay.groupItems[y]);
+				}
+				groups = leftRightSort(groups);
+
+				for(var y=0;y<subLen;y++)
+				{
+					piece = groups[y];
+					piece.name = curSize + " " + pieces[y];
+				}
+			}
+		}
+		else
+		{
+			result = false;
+		}
+
+		return result;
+	}
 
 
 
@@ -285,14 +356,8 @@ function container()
 
 	//network storage for production version of script
 
-	if($.os.match('Windows')){
-		//PC
-		eval("#include \"N:\\Library\\Scripts\\Script Resources\\Data\\build_template_library.js\"");
-		
-	} else {
-		// MAC
-		eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/build_template_library.js\"");
-	}
+	eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/build_template_library.js\"");
+	eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/aa_special_instructions.js\"");
 
 
 
@@ -309,238 +374,110 @@ function container()
 
 	var docRef = app.activeDocument;
 	var layers = docRef.layers;
-	var prepress = layers[0].layers["Prepress"];
+	// var ppLay = layers[0].layers["Prepress"];
+	var ppLay = getPPLay(layers);
 	var garLayName = layers[0].name;
 	var artLayers = layers[0].layers["Artwork Layer"];
-	var code,underscoreCode;
+	var code,underscoreCode,placementData,libPieces,renamePieces;
 
-	//////////////////
-	//Legacy Version//
-	////Do Not Use////
-	//////////////////
-
-		//the below is deprecated in favor of using centralized getCode function
-		//located in utilities container.
-
-
-		// var styleNum = layers[0].name.substring(layers[0].name.lastIndexOf("_")+1,layers[0].name.length);
-
-		// var code = layers[0].name.substring(0,layers[0].name.indexOf("_0"));
-
-		// var pat1 = /_[a-zA-Z]{1,2}$/
-		// var pat2 = /_\d{3,4}$/
-		
-
-		// if(pat1.test(garLayName))
-		// {
-		// 	//this garment layer name has a trailing letter, likely to distinguish between inside and outside of a reversible jersey
-		// 	//to get the correct code, you need to trim the trailing letter and then the style number
-
-		// 	//trim off the trailing _A or similar so the string contains the code and style number
-		// 	var code = garLayName.substring(0, garLayName.lastIndexOf("_"))
-
-		// 	//trim off the style number so you're left with the correct code.
-		// 	code = garLayName.substring(0, code.lastIndexOf("_"))
-		// }
-
-		// else if(pat2.test(garLayName))
-		// {
-		// 	//this garment layer name ends with the style number
-		// 	//to get the correct code you need to simply trim the _000 from the end.
-		// 	var code = garLayName.substring(0, garLayName.lastIndexOf("_"))
-		// }
 
 	if(valid)
 	{
 		code = getCode(garLayName);
+		underscoreCode = code.replace("-","_");
 	}
 	else
 	{
-		return false;
-	}
-
-	underscoreCode = code.replace("-","_");
-
-	if(templateInfo[code])
-	{
-		var library = templateInfo[code]["placement"];
-	}
-	else if(templateInfo[underscoreCode])
-	{
-		code = underscoreCode;
-		var library = templateInfo[code]["placement"];
-	}
-	else
-	{
-		alert("The code: " + code + " wasn't found in the library.\nPlease let William know about this issue.");
-		return false;
+		valid = false;
 	}
 
 	
+	if(valid && !getData(code))
+	{
+		valid = false;
+	}
 
+	if(valid && !renamePiecesDialog())
+	{
+		valid = false;
+	}
 	
-	if(library["Regular"] != undefined)
+
+	if(valid)
 	{
-		//commenting this generic prompt in favor of a
-		//more robust scriptUI
-		// var regRag = prompt("Regular or Raglan?", "");
-		var regRag = regRagPrompt(library);
-		if(!regRag)
-		{
-			alert("You cancelled the script. Exiting.");
-			return;                                                                           
-		}
-		library = library[regRag];
+		ppLay.visible = true;
 	}
-	var libPieces = templateInfo[code]["pieces"];
 
-	var renamePieces = false;
-
-	var w = new Window("dialog", "Did the group names get messed up?");
-		var txtGroup = w.add("group");
-			var txt = txtGroup.add("statictext", undefined, "Do the pieces need to be properly renamed?");
-		var btnGroup = w.add("group");
-			var yesButton = btnGroup.add("button", undefined, "Yes");
-			yesButton.onClick = function()
-			{
-				renamePieces = true;
-				w.close();
-			}
-
-			var noButton = btnGroup.add("button", undefined, "No");
-			noButton.onClick = function()
-			{
-				renamePieces = false;
-				w.close();
-			}
-	w.show();
-
-	prepress.visible = true;
-
-	if (renamePieces)
+	if(valid && renamePieces)
 	{
-		var pieces = leftToRightOrderPrompt(code,libPieces)
+		valid = rename();
+	}
 
+	//check whether the pieces need to be rotated per special instructions
+	if(valid && specialInstructions[code])
+	{
+		specialInstructions[code]("rebuild");
+	}
 
-		if(pieces == null)
+	if(valid)
+	{
+		valid = moveArt();
+	}
+
+	if(valid)
+	{
+		ppLay.visible = false;	
+	}
+
+	if(valid)
+	{
+		try
 		{
-			return;
+			layers[0].layers["Information"].locked = false;
+			var comp = layers[0].layers["Information"].layers["Prepress Completed"];
+			comp.remove();
+			// layers[0].layers["Information"].locked = true;
+		}
+		catch(e)
+		{
+			//no prepress completed indicator detected or else it couldn't be deleted for some reason..
 		}
 
-		prepress.visible = true;
+		properTemplateSetup(docRef)
+	}
 
-		for(var a=0;a<prepress.layers.length;a++)
+	if(valid)
+	{
+		//remove any artwork from the artwork layers
+		//so that the template will be fresh and clean for
+		//building a prepress later
+		try
 		{
-			var curSize = prepress.layers[a].name;
-			var groups = [];
-			for(var g=0;g<prepress.layers[a].groupItems.length;g++)
+			//loop the artwork layers and delete
+			//any artwork if necessary
+			for(var da=0;da<artLayers.layers.length;da++)
 			{
-				var thisGroup = prepress.layers[a].groupItems[g];
-				groups.push(thisGroup);
-			}
-			var theItems = leftRightSort(groups);
-			for(var b=0;b<theItems.length;b++)
-			{
-				var curItem = theItems[b];
-				curItem.name = curSize + " " + pieces[b];
-				var thisName = curItem.name;
-
-				//if there is a regular/raglan distinction
-				// var l = library["Raglan"][curSize][curItem.name][0];
-				// var t = library["Raglan"][curSize][curItem.name][1];
-
-				//if there is no reg/rag distinction
-
-				//check if this piece is an outside cowl.
-				//if so, rotate it 180 degrees
-				if(thisName.indexOf("Outside Cowl")>-1)
+				var thisLay = artLayers.layers[da];
+				if(thisLay.pageItems.length>0)
 				{
-					thisItem.rotate(180);
-				}
-
-				var l = library[curSize][curItem.name][0];
-				var t = library[curSize][curItem.name][1];			
-				curItem.left = l;
-				curItem.top = t;
-			}
-		}
-	}
-	else
-	{
-		for(var a=0;a<prepress.layers.length;a++)
-		{
-			var thisLay = prepress.layers[a];
-			coords = library[thisLay.name];
-			for(var b=0;b<thisLay.groupItems.length;b++)
-			{
-				var thisItem = thisLay.groupItems[b];
-				var thisName = thisItem.name;
-
-				//check if this piece is an outside cowl.
-				//if so, rotate it 180 degrees
-				if(thisName.indexOf("Outside Cowl")>-1)
-				{
-					thisItem.rotate(180);
-				}
-				
-				thisItem.left = coords[thisName][0];
-				thisItem.top = coords[thisName][1];
-			}
-		}
-	}
-
-
-	prepress.visible = false;	
-
-
-	try
-	{
-		layers[0].layers["Information"].locked = false;
-		var comp = layers[0].layers["Information"].layers["Prepress Completed"];
-		comp.remove();
-		// layers[0].layers["Information"].locked = true;
-	}
-	catch(e)
-	{
-		//no prepress completed indicator detected or else it couldn't be deleted for some reason..
-	}
-
-	layers[0].layers["Information"].locked = true;l
-
-	// var styleNum = prompt("Enter style Number..");
-
-	// layers[0].name = layers[0].name.substring(0,layers[0].name.length-3) + styleNum;
-
-
-	//remove any artwork from the artwork layers
-	//so that the template will be fresh and clean for
-	//building a prepress later
-	try
-	{
-		//loop the artwork layers and delete
-		//any artwork if necessary
-		for(var da=0;da<artLayers.layers.length;da++)
-		{
-			var thisLay = artLayers.layers[da];
-			if(thisLay.pageItems.length>0)
-			{
-				//loop the page items and delete
-				//should only be one on each, but lets be safe, eh?
-				for(var pi = thisLay.pageItems.length-1;pi >-1; pi--)
-				{
-					var thisItem = thisLay.pageItems[pi];
-					thisItem.remove();
+					//loop the page items and delete
+					//should only be one on each, but lets be safe, eh?
+					for(var pi = thisLay.pageItems.length-1;pi >-1; pi--)
+					{
+						var thisItem = thisLay.pageItems[pi];
+						thisItem.remove();
+					}
 				}
 			}
 		}
-	}
-	catch(e)
-	{
-		//failed while deleting the artwork from the artwork layers
-		//shrug. i guess just alert the user
-		alert("Failed while trying to clear out the artwork layers.\nPlease double check that the art layers \
-			don't have any art left on them, as this will cause an issue when trying to build a prepress later.");
-		alert("e = " + e);
+		catch(e)
+		{
+			//failed while deleting the artwork from the artwork layers
+			//shrug. i guess just alert the user
+			alert("Failed while trying to clear out the artwork layers.\nPlease double check that the art layers \
+				don't have any art left on them, as this will cause an issue when trying to build a prepress later.");
+			alert("e = " + e);
+		}
 	}
 
 
