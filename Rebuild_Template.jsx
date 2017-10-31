@@ -4,7 +4,7 @@ function container()
 	#include "/Volumes/Customization/Library/Scripts/Script Resources/Data/Utilities_Container.js";
 
 	eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/build_template_library.js\"");
-	eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/aa_special_instructions.js\"");
+	
 
 	var batchFiles = [];
 
@@ -367,6 +367,8 @@ function container()
 		var garLayName = layers[0].name;
 		var artLayers = layers[0].layers["Artwork Layer"];
 		var code,underscoreCode,placementData,libPieces,renamePieces;
+
+		eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/aa_special_instructions.js\"");
 
 
 		if(valid)
