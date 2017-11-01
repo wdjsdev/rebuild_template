@@ -297,11 +297,19 @@ function container()
 				groups = curLay.groupItems;
 				subLen = groups.length;
 
-				for(var y=0;y<subLen;y++)
+				for(var y=0;y<subLen && result;y++)
 				{
 					piece = groups[y];
-					piece.left = placementData[curSize][piece.name][0];
-					piece.top = placementData[curSize][piece.name][1];
+					if(!piece.name)
+					{
+						alert("At least one group on the layer " + curSize + " is not named properly. Take a closer look.");
+						result = false;
+					}
+					else
+					{
+						piece.left = placementData[curSize][piece.name][0];
+						piece.top = placementData[curSize][piece.name][1];
+					}
 				}
 			}
 			return result;
