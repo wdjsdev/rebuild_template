@@ -305,6 +305,11 @@ function container()
 						alert("At least one group on the layer " + curSize + " is not named properly. Take a closer look.");
 						result = false;
 					}
+					else if(piece.name.indexOf("undefined")>-1)
+					{
+						alert("At least one group on the layer " + curSize + " is not named properly. Take a closer look.");
+						result = false;
+					}
 					else
 					{
 						piece.left = placementData[curSize][piece.name][0];
