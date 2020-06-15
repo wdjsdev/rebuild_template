@@ -1,3 +1,5 @@
+#target Illustrator
+
 function container()
 {
 	var valid = true;
@@ -263,6 +265,8 @@ function container()
 		{
 			var result = true;
 
+			eval("#include \"" + btLibraryPath + "\"");
+
 			if(templateInfo[code])
 			{
 				placementData = templateInfo[code]["placement"];
@@ -427,7 +431,7 @@ function container()
 		var artLayers = layers[0].layers["Artwork Layer"];
 		var code,underscoreCode,placementData,libPieces,renamePieces;
 
-		eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/aa_special_instructions.js\"");
+		eval("#include \"" + dataPath + "aa_special_instructions.js\"");
 
 
 		if(valid)
