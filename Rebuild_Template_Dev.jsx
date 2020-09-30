@@ -55,8 +55,9 @@ function container()
 	
 
 	var batchFiles = [];
+	// var promptForRename = renamePiecesDialog();
 
-	function rebuild(promptForRename)
+	function rebuild()
 	{
 		/*****************************************************************************/
 
@@ -302,37 +303,37 @@ function container()
 			return result;
 		}
 
-		function renamePiecesDialog()
-		{
-			var result = true;
-			var w = new Window("dialog", "Did the group names get messed up?");
-				var txtGroup = w.add("group");
-					var txt = txtGroup.add("statictext", undefined, "Do the pieces need to be properly renamed?");
-				var btnGroup = w.add("group");
-					var yesButton = btnGroup.add("button", undefined, "Yes");
-					yesButton.onClick = function()
-					{
-						renamePieces = true;
-						w.close();
-					}
+		// function renamePiecesDialog()
+		// {
+		// 	var result = true;
+		// 	var w = new Window("dialog", "Did the group names get messed up?");
+		// 		var txtGroup = w.add("group");
+		// 			var txt = txtGroup.add("statictext", undefined, "Do the pieces need to be properly renamed?");
+		// 		var btnGroup = w.add("group");
+		// 			var yesButton = btnGroup.add("button", undefined, "Yes");
+		// 			yesButton.onClick = function()
+		// 			{
+		// 				renamePieces = true;
+		// 				w.close();
+		// 			}
 
-					var noButton = btnGroup.add("button", undefined, "No");
-					noButton.onClick = function()
-					{
-						renamePieces = false;
-						w.close();
-					}
+		// 			var noButton = btnGroup.add("button", undefined, "No");
+		// 			noButton.onClick = function()
+		// 			{
+		// 				renamePieces = false;
+		// 				w.close();
+		// 			}
 
-					var cancel = btnGroup.add("button", undefined, "Cancel");
-					cancel.onClick = function()
-					{
-						result = false;
-						w.close();
-					}
-			w.show();
+		// 			var cancel = btnGroup.add("button", undefined, "Cancel");
+		// 			cancel.onClick = function()
+		// 			{
+		// 				result = false;
+		// 				w.close();
+		// 			}
+		// 	w.show();
 
-			return result;
-		}
+		// 	return result;
+		// }
 
 		function moveArt()
 		{
@@ -450,13 +451,13 @@ function container()
 			valid = false;
 		}
 
-		if(promptForRename)
-		{
-			if(valid && !renamePiecesDialog())
-			{
-				valid = false;
-			}
-		}
+		// if(promptForRename)
+		// {
+		// 	if(valid && !renamePiecesDialog())
+		// 	{
+		// 		valid = false;
+		// 	}
+		// }
 		
 
 		if(valid)
@@ -629,6 +630,7 @@ function container()
 		}
 	}
 
-	batchPrompt();
+	// batchPrompt();
+	batchInit(rebuild)
 }
 container();
