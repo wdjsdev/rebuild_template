@@ -272,12 +272,14 @@ function container()
 			{
 				placementData = templateInfo[code]["placement"];
 				libPieces = templateInfo[code]["pieces"];
+				rotation = templateInfo[code].rotate;
 			}
 			else if(templateInfo[underscoreCode])
 			{
 				code = underscoreCode;
 				placementData = templateInfo[code]["placement"];
 				libPieces = templateInfo[code]["pieces"];
+				rotation = templateInfo[code].rotate;
 			}
 			else
 			{
@@ -430,7 +432,7 @@ function container()
 		var ppLay = getPPLay(layers);
 		var garLayName = layers[0].name;
 		var artLayers = layers[0].layers["Artwork Layer"];
-		var code,underscoreCode,placementData,libPieces,renamePieces;
+		var code,underscoreCode,placementData,rotation,libPieces,renamePieces;
 
 		eval("#include \"" + dataPath + "aa_special_instructions.js\"");
 
@@ -471,9 +473,13 @@ function container()
 		}
 
 		//check whether the pieces need to be rotated per special instructions
-		if(valid && specialInstructions[code])
+		// if(valid && specialInstructions[code])
+		// {
+		// 	specialInstructions[code]("rebuild");
+		// }
+		if(valid && rotation)
 		{
-			specialInstructions[code]("rebuild");
+			rotatePieces(rotation);
 		}
 
 		if(valid)
