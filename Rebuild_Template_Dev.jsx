@@ -20,7 +20,7 @@ function container()
 			devUtilitiesPreferenceFile.open("r");
 			var prefContents = devUtilitiesPreferenceFile.read();
 			devUtilitiesPreferenceFile.close();
-			if(prefContents === "true")
+			if(prefContents.match(/true/i))
 			{
 				utilPath = "~/Desktop/automation/utilities/";
 				ext = ".js";
@@ -343,6 +343,7 @@ function container()
 
 			var len = ppLay.layers.length;
 			var curLay,curSize,subLen,piece,groups = [];
+			app.coordinateSystem = CoordinateSystem.ARTBOARDCOORDINATESYSTEM;
 			for(var x=0;x<len;x++)
 			{
 				curLay = ppLay.layers[x];
@@ -479,7 +480,7 @@ function container()
 		// }
 		if(valid && rotation)
 		{
-			rotatePieces(rotation);
+			rotatePieces(rotation,ppLay);
 		}
 
 		if(valid)
